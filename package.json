@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "scrape.js",
   "scripts": {
-    "install": "npm install sudo apt update npx playwright install",
+    "init": "npm install sudo apt update npx playwright install",
     "start": "node scrape.js"
   },
   "keywords": [],
