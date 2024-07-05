@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "scrape.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "install": "npm install sudo apt update npx playwright install",
     "start": "node scrape.js"
   },
   "keywords": [],
@@ -15,7 +15,6 @@
     "cheerio": "^1.0.0-rc.12",
     "cors": "^2.8.5",
     "express": "^4.19.2",
-    "playwright": "^1.45.1",
-    "puppeteer": "^22.12.1"
+    "playwright": "^1.45.1"
   }
 }
