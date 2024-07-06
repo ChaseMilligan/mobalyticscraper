@@ -1,5 +1,5 @@
 ## Description
-[This project](https://chasemilligan.github.io/mobalyticscraper/multiple) is a web scraping tool that uses [Node.js](https://nodejs.org/en) and [Playwright](https://playwright.dev/). I made it specifically to look at my friends and my stats over the last 10 solo queue games to see who gained the most LP in the least amount of time. But you can use it too! Just copy and paste you and your friends Riot ID's into the search bar separated by commas to see how you stack up against them!
+[This project](https://chasemilligan.github.io/mobalyticscraper/) is a web scraping tool that uses [Node.js](https://nodejs.org/en) and [Playwright](https://playwright.dev/). I made it specifically to look at my friends and my stats over the last 10 solo queue games to see who gained the most LP in the least amount of time. But you can use it too! Just copy and paste you and your friends Riot ID's into the search bar separated by commas to see how you stack up against them!
 
 ## Installation
 To install the necessary dependencies and set up the environment, run the following command:
