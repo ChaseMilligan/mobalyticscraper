@@ -4,7 +4,7 @@
   "main": "scrape.js",
   "scripts": {
     "init": "npm install && sudo apt update && npx playwright install && npm run start",
-    "start": "node scrape.js"
+    "start": "node backend/scrape.js"
   },
   "keywords": [],
   "author": "",
@@ -13,6 +13,7 @@
   "dependencies": {
     "cheerio": "^1.0.0-rc.12",
     "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "playwright": "^1.45.1"
   }

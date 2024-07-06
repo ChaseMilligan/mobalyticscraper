@@ -1,9 +1,10 @@
 const { chromium } = require('playwright');
 const cheerio = require('cheerio');
+require('dotenv').config()
 const express = require('express');
 const cors = require('cors'); // Import cors
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT;
 
 app.use(cors()); // Enable CORS for all routes
 
