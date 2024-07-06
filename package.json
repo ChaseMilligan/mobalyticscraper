@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "scrape.js",
   "scripts": {
-    "init": "npm install && apt update && npx playwright install && npm run start",
+    "init": "npm install && npx playwright install && npm run start",
     "start": "node backend/scrape.js"
   },
   "keywords": [],
