@@ -5,8 +5,13 @@ const express = require('express');
 const cors = require('cors'); // Import cors
 const app = express();
 const PORT = process.env.PORT;
+const localtunnel = require('localtunnel');
 
 app.use(cors()); // Enable CORS for all routes
+
+const tunnel = localtunnel(PORT, { subdomain: 'mobalyticscraper'}, (err, tunnel) => {
+    console.log('Tunnel URL: ' + tunnel.url);
+});
 
 function removeNonNumerical(input) {
   // Remove all non-numerical characters
