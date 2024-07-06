@@ -14,7 +14,6 @@ const tunnel = localtunnel(PORT, { subdomain: 'mobalyticscraper'}, (err, tunnel)
 });
 
 function removeNonNumerical(input) {
-  // Remove all non-numerical characters
   let numericalString = input.replace(/\D/g, '');
 
   return numericalString;
@@ -35,17 +34,25 @@ async function extractElements(url) {
     const htmlContent = await scrapeHTML(url);
     const $ = cheerio.load(htmlContent);
     const results = {
-        wins: [],
-        losses: [],
-        times: []
+        pfpUrl: '',
+        sequence: [],
+        times: [],
+        rankID: {
+            iconUrl: '',
+            rank: '',
+        }
     };
 
-    $('div.m-15s0h17').each((index, element) => {
-        results.wins.push(removeNonNumerical($(element).text()));
-	});
-	
-	$('div.m-122nwo5').each((index, element) => {
-        results.losses.push(removeNonNumerical($(element).text()));
+    // Extract wins and losses along with their order
+    $('div.m-15s0h17, div.m-122nwo5').each((index, element) => {
+        const isWin = $(element).hasClass('m-15s0h17');
+        const resultType = isWin ? 'win' : 'loss';
+        let resultTime = '';
+        
+        results.sequence.push({
+            type: resultType,
+            value: removeNonNumerical($(element).text())
+        });
     });
 
     $('span.m-1htw35x').each((index, element) => {
@@ -53,6 +60,23 @@ async function extractElements(url) {
             results.times.push(removeNonNumerical($(element).text()));
         }
     });
+
+    // Extract profile picture URL
+    $('div.m-fdr2vm img').each((index, element) => {
+        results.pfpUrl = $(element).attr('src');
+    });
+
+    if ($('div.m-1spa8xs div.m-jnvb0').text().includes('Ranked Solo')) {
+        $('div.m-1spa8xs img.m-17nwc').each((index, element1) => {
+            results.rankID.iconUrl = $(element1).attr('src');
+        });
+
+        // Extract rank
+        $('div.m-1spa8xs div.m-1gydigm').each((index, element2) => {
+            results.rankID.rank = $(element2).text();
+        });
+    }
+
     console.log(results);
     return results;
 }
