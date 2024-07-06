@@ -99,9 +99,19 @@ p {
   padding-top: 166px;
 }
 
+.summoner-card-content {
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+}
+
 .summoner-icon {
-  width: 300px;
-  height: 300px;
+  width: 200px;
+  height: 200px;
   border-radius: 50%;
   object-fit: cover;
   transform: translate(-50%, -50%);
@@ -109,6 +119,15 @@ p {
   position: absolute;
   top: 0;
   left: 50%;
+}
+
+.summoner-icon-border {
+  width: 300px;
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
 }
 
 .time-spent span {
@@ -159,7 +178,8 @@ p {
   font-weight: 700;
 }
 
-.sequence-list {
+.sequence-list,
+.times-list {
   display: flex;
   gap: 0px;
   justify-content: space-evenly;
@@ -170,6 +190,17 @@ p {
   border-radius: 16px;
   overflow: hidden;
   filter: drop-shadow(0 3px 4px rgba(43, 43, 43, 0.2));
+}
+
+.times-list {
+  margin-top: -28px;
+}
+
+.times-list li {
+  font-size: 14px;
+  width: 100%;
+  display: flex;
+  padding: 0px 6px;
 }
 
 .sequence-list li {

@@ -146,23 +146,41 @@
             sequenceList.appendChild(sequenceItem);
           });
 
+          const timesList = document.createElement('ul');
+          timesList.classList.add('times-list');
+
+          data.times.forEach((time, index) => {
+            const timesItem = document.createElement('li');
+            timesItem.textContent = `${time}m`;
+            timesItem.classList.add('time');
+            timesList.appendChild(timesItem);
+          });
+
           const timeSpent = totalTime > 0 ? convertMinutesToHoursAndMinutes(data.times) : 'No time spent';
           const netLPString = netLP >= 0 ? `+${netLP}` : `${netLP}`;
 
           summonerSection.innerHTML = `
             <div class="summoner-card">
+              ${i === 1 ? '<img class="summoner-icon-border first" src="https://media.discordapp.net/attachments/1218314154721673248/1259209778065051790/first.png?ex=668ad9fe&is=6689887e&hm=18785fb3808036ce3318d25a87a53b941f9f0738fc2436ce947a469931b4214a&=&format=webp&quality=lossless" />' : ''}
+              ${i === 2 ? '<img class="summoner-icon-border first" src="https://media.discordapp.net/attachments/1218314154721673248/1259209778375163934/second.png?ex=668ad9fe&is=6689887e&hm=4fdbe6e61480940ca45044b06f12bd42e481ca56f40cb9b50a857b7b00f097e5&=&format=webp&quality=lossless" />' : ''}
+              ${i === 3 ? '<img class="summoner-icon-border first" src="https://media.discordapp.net/attachments/1218314154721673248/1259209778631151626/third.png?ex=668ad9fe&is=6689887e&hm=b665616f48d0e914afe809368744a2f063ed9ed113582586ccd1f701858c772b&=&format=webp&quality=lossless" />' : ''}
               <img src="${data.pfpUrl}" alt="${summonerName}" class="summoner-icon" />
-              <h2>${addNumberSuffix(i)}  ${summonerName}</h2>
-              <p class="time-spent"><span>${timeSpent}</span></p>
-              <div class="row">
-                <p class="elpee chakra"><span style="color: ${netLP >= 0 ? 'green' : 'red'};">${netLPString}</span> LP</p>
-                <div class="rank-info">
-                  <img src="${data.rankID.iconUrl}" alt="${data.rankID.rank}" class="rank-icon"/>
-                  <p class="tier chakra">${data.rankID.rank}</p>
+              <div class="summoner-card-content">
+                <h2>${i === 1 || i === 2 || i === 3 ? '' : `${addNumberSuffix(i)}  `}${summonerName}</h2>
+                <p class="time-spent"><span>${timeSpent}</span></p>
+                <div class="row">
+                  <p class="elpee chakra"><span style="color: ${netLP >= 0 ? 'green' : 'red'};">${netLPString}</span> LP</p>
+                  <div class="rank-info">
+                    <img src="${data.rankID.iconUrl}" alt="${data.rankID.rank}" class="rank-icon"/>
+                    <p class="tier chakra">${data.rankID.rank}</p>
+                  </div>
                 </div>
-              </div>
-              <div class="row">
-                ${sequenceList.outerHTML}
+                <div class="row">
+                  ${sequenceList.outerHTML}
+                </div>
+                <div class="row">
+                  ${timesList.outerHTML}
+                </div>
               </div>
             </div>
           `;
