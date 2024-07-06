@@ -168,6 +168,7 @@ p {
   padding: 0;
   width: 100%;
   border-radius: 16px;
+  overflow: hidden;
   filter: drop-shadow(0 3px 4px rgba(43, 43, 43, 0.2));
 }
 
