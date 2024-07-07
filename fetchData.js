@@ -92,7 +92,6 @@ async function getPuuid(riotId, tagLine) {
     const results = filteredMatches.map(match => {
       const participant = match.info.participants.find(p => p.puuid === puuid);
       return {
-        summoner: `${riotId.toUpperCase()}#${tagLine.toUpperCase()}`,
         match: {
           gameTimeMinutes: match.info.gameDuration / 60,
           win: participant.win,
