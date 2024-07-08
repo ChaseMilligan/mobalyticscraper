@@ -55,6 +55,10 @@ p {
   color: #d3d3d3;
 }
 
+.month-week {
+  text-align: center;
+}
+
 .search-container {
   display: flex;
   background-color: #3b3b3b;
@@ -133,8 +137,73 @@ p {
   z-index: 1;
 }
 
-.time-spent span {
+.rank-info {
+  position: relative;
+  height: 150px;
+  display: flex;
+  align-items: center;
+}
+
+.rank-info img {
+  width: auto;
+  max-height: 245px;
+  width: 175%;
+  filter: brightness(0.6);
+  position: relative;
+  z-index: 1;
+  overflow: visible;
+}
+
+.rank-info p {
   font-size: 20px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  text-shadow: 2px 2px 1px #000000;
+  font-weight: 700;
+  text-wrap: nowrap;
+}
+
+.last-ten-data {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: -webkit-fit-content;
+  max-width: 100%;
+  padding: 8px;
+  border-radius: 16px;
+  border: solid 1px #4b4b4b;
+  margin-top: 32px;
+  position: relative;
+}
+
+.last-ten-data::before {
+  content: "Last 10 games";
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #ffffff;
+  position: absolute;
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 16px;
+  background-color: #3b3b3b;
+}
+
+.time-spent {
+  width: 50%;
+  text-align: center;
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.time-spent span {
+  font-size: 52px;
   line-height: 1;
   font-weight: bold;
   color: #ffffff;
@@ -145,39 +214,11 @@ p {
   font-size: 24px;
   line-height: 1;
   width: 50%;
+  text-align: center;
 }
 
 .elpee span {
   font-size: 52px;
-  font-weight: 700;
-}
-
-.rank-info {
-  width: 50%;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  align-items: center;
-  position: relative;
-  justify-content: center;
-}
-
-.rank-info img {
-  width: auto;
-  height: 125px;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 0;
-  filter: brightness(0.6);
-}
-
-.rank-info p {
-  font-size: 20px;
-  position: relative;
-  z-index: 10;
-  text-shadow: 2px 2px 1px #000000;
   font-weight: 700;
 }
 
@@ -186,24 +227,13 @@ p {
   display: flex;
   gap: 0px;
   justify-content: space-evenly;
-  margin-top: 16px;
   list-style: none;
   padding: 0;
   width: 100%;
   border-radius: 16px;
+  margin: 0;
   overflow: hidden;
   filter: drop-shadow(0 3px 4px rgba(43, 43, 43, 0.2));
-}
-
-.times-list {
-  margin-top: -28px;
-}
-
-.times-list li {
-  font-size: 14px;
-  width: 100%;
-  display: flex;
-  padding: 0px 6px;
 }
 
 .sequence-list li {
@@ -230,6 +260,17 @@ p {
 
 .sequence-list li:last-of-type {
   border-radius: 0px 16px 16px 0px;
+}
+
+.times-list {
+  margin-top: -12px;
+}
+
+.times-list li {
+  font-size: 12px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
 #data-display {

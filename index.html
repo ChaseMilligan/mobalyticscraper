@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scraped Content</title>
+  <title>Daywalker Data Center</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,9 +13,15 @@
 
 <body>
   <div class="container">
+    <div class="month-week">
+      <h1>
+        <span id="currentMonth"></span>
+        <span id="currentWeek"></span>
+      </h1>
+    </div>
     <form action="" id="scrapeForm" class="search-container">
       <textarea id="summonerInput" class="search-input"
-        placeholder="Chilligan#NA1, Bypolarbear#smonk, Drug Or Not#Sasky, Dlash on D#skyxe, E G G B Ø I#NA1, Shíning#NA1, Juncture#NA1">Chilligan#NA1, Bypolarbear#smonk, Drug Or Not#Sasky, Dlash on D#skyxe, E G G B Ø I#NA1, Shíning#NA1, Juncture#NA1</textarea>
+        placeholder="Chilligan#NA1, Bypolarbear#smonk, Drug Or Not#Sasky, Dlash on D#skyxe, E G G B Ø I#NA1, Shíning#NA1, Juncture#NA1">Chilligan#NA1, Bypolarbear#smonk, Drug Or Not#Sasky</textarea>
       <input type="submit" class="search-button" value="Search" />
     </form>
   </div>
@@ -32,6 +38,22 @@
   </footer>
 
   <script>
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+
+    const weeks = [
+      'week 1', 'week 2', 'week 3', 'week 4', 'week 5'
+    ];
+
+    const currentDate = new Date();
+    const currentMonth = months[currentDate.getMonth()];
+    const currentWeek = weeks[Math.floor(currentDate.getDate() / 7)];
+
+    document.getElementById('currentMonth').textContent = currentMonth;
+    document.getElementById('currentWeek').textContent = currentWeek;
+
     function formatString(input) {
       return input.toLowerCase().replace(/#/g, '-');
     }
@@ -65,7 +87,7 @@
       // Convert to string with one decimal place and remove trailing zero if needed
       const decimalHours = parseFloat(hours.toFixed(1));
 
-      return `${decimalHours} hr(s)`;
+      return `${decimalHours}`;
     }
 
     function addNumberSuffix(number) {
@@ -98,6 +120,17 @@
       return await response.json();
     }
 
+    function calculateWinRate(array) {
+      let winCount = 0;
+      for (let i = 0; i < array.length; i++) {
+        if (array[i].match.win === true) {
+          winCount++;
+        }
+      }
+      let winRate = (winCount / array.length) * 100;
+      return winRate.toFixed(2); // returns the win rate percentage rounded to two decimal places
+    }
+
     async function handleFormSubmit(event) {
       event.preventDefault();
       const loader = document.getElementById('loader');
@@ -120,9 +153,12 @@
 
         for (const summoner of summoners) {
           const data = await fetchSummonerData(summoner);
-          const netLP = arrayDifference(data.sequence);
-          const totalTime = data.times.reduce((acc, time) => acc + Number(time), 0);
-          allData.push({ summoner, data, netLP, totalTime });
+          console.log(data)
+          const scrapedData = data.scrape;
+          const apiData = data.api;
+          const netLP = arrayDifference(scrapedData.sequence);
+          const totalTime = scrapedData.times.reduce((acc, time) => acc + Number(time), 0);
+          allData.push({ summoner, scrapedData, apiData, netLP, totalTime });
         }
 
         allData.sort((a, b) => {
@@ -135,7 +171,7 @@
 
         let i = 1;
 
-        allData.forEach(({ summoner, data, netLP, totalTime }) => {
+        allData.forEach(({ summoner, scrapedData, apiData, netLP, totalTime }) => {
           const summonerName = summoner.replace(/-/g, '#').toUpperCase();
 
           const summonerSection = document.createElement('div');
@@ -144,7 +180,7 @@
           const sequenceList = document.createElement('ul');
           sequenceList.classList.add('sequence-list');
 
-          data.sequence.forEach((item, index) => {
+          scrapedData.sequence.forEach((item, index) => {
             const sequenceItem = document.createElement('li');
             sequenceItem.textContent = `${item.type == 'win' ? '+' : '-'}${item.value}`;
             sequenceItem.classList.add(item.type);
@@ -154,37 +190,46 @@
           const timesList = document.createElement('ul');
           timesList.classList.add('times-list');
 
-          data.times.forEach((time, index) => {
+          scrapedData.times.forEach((time, index) => {
             const timesItem = document.createElement('li');
             timesItem.textContent = `${time}m`;
             timesItem.classList.add('time');
             timesList.appendChild(timesItem);
           });
 
-          const timeSpent = totalTime > 0 ? convertMinutesToHoursAndMinutes(data.times) : 'No time spent';
+          const timeSpent = totalTime > 0 ? convertMinutesToHoursAndMinutes(scrapedData.times) : 'No time spent';
           const netLPString = netLP >= 0 ? `+${netLP}` : `${netLP}`;
 
           summonerSection.innerHTML = `
             <div class="summoner-card">
               ${i === 1 ? '<img class="summoner-icon-border first" src="https://media.discordapp.net/attachments/1218314154721673248/1259209778065051790/first.png?ex=668ad9fe&is=6689887e&hm=18785fb3808036ce3318d25a87a53b941f9f0738fc2436ce947a469931b4214a&=&format=webp&quality=lossless" />' : ''}
-              ${i === 2 ? '<img class="summoner-icon-border first" src="https://media.discordapp.net/attachments/1218314154721673248/1259209778375163934/second.png?ex=668ad9fe&is=6689887e&hm=4fdbe6e61480940ca45044b06f12bd42e481ca56f40cb9b50a857b7b00f097e5&=&format=webp&quality=lossless" />' : ''}
-              ${i === 3 ? '<img class="summoner-icon-border first" src="https://media.discordapp.net/attachments/1218314154721673248/1259209778631151626/third.png?ex=668ad9fe&is=6689887e&hm=b665616f48d0e914afe809368744a2f063ed9ed113582586ccd1f701858c772b&=&format=webp&quality=lossless" />' : ''}
-              <img src="${data.pfpUrl}" alt="${summonerName}" class="summoner-icon" />
+              ${i === 2 ? '<img class="summoner-icon-border second" src="https://media.discordapp.net/attachments/1218314154721673248/1259209778375163934/second.png?ex=668ad9fe&is=6689887e&hm=4fdbe6e61480940ca45044b06f12bd42e481ca56f40cb9b50a857b7b00f097e5&=&format=webp&quality=lossless" />' : ''}
+              ${i === 3 ? '<img class="summoner-icon-border third" src="https://media.discordapp.net/attachments/1218314154721673248/1259209778631151626/third.png?ex=668ad9fe&is=6689887e&hm=b665616f48d0e914afe809368744a2f063ed9ed113582586ccd1f701858c772b&=&format=webp&quality=lossless" />' : ''}
+              <img src="${scrapedData.pfpUrl}" alt="${summonerName}" class="summoner-icon" />
               <div class="summoner-card-content">
                 <h2>${i === 1 || i === 2 || i === 3 ? '' : `${addNumberSuffix(i)}  `}${summonerName}</h2>
-                <p class="time-spent"><span>${timeSpent}</span></p>
-                <div class="row">
-                  <p class="elpee chakra"><span style="color: ${netLP >= 0 ? 'green' : 'red'};">${netLPString}</span> LP</p>
-                  <div class="rank-info">
-                    <img src="${data.rankID.iconUrl}" alt="${data.rankID.rank}" class="rank-icon"/>
-                    <p class="tier chakra">${data.rankID.rank}</p>
+                <div class="rank-info">
+                  <img src="${scrapedData.rankID.iconUrl}" alt="${scrapedData.rankID.rank}" class="rank-icon"/>
+                  <p class="tier chakra">${scrapedData.rankID.rank}</p>
+                </div>
+                ${apiData.matches.length > 0 ? `
+                <div class="weekly-data">
+                  <div class="row">
+                    ${apiData.matches.length > 0 ? `<p class="weekly-winrate chakra">${calculateWinRate(apiData.matches)}%</p>` : ''}
                   </div>
                 </div>
-                <div class="row">
-                  ${sequenceList.outerHTML}
-                </div>
-                <div class="row">
-                  ${timesList.outerHTML}
+                ` : ''}
+                <div class="last-ten-data">
+                  <div class="row">
+                    <p class="elpee chakra"><span style="color: ${netLP >= 0 ? 'green' : 'red'};">${netLPString}</span> LP</p>
+                    <p class="time-spent chakra"><span>${timeSpent}</span> HR(S)</p>
+                  </div>
+                  <div class="row">
+                    ${sequenceList.outerHTML}
+                  </div>
+                  <div class="row">
+                    ${timesList.outerHTML}
+                  </div>
                 </div>
               </div>
             </div>
