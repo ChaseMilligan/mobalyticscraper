@@ -4,64 +4,75 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scraped Content</title>
+  <title>Daywalker Data Center</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Abel&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
   <div class="container">
-    <form action="" id="scrapeForm"  class="search-container">
-      <input id="summonerInput" type="text" class="search-input" placeholder="Chilligan#NA1">
+    <div class="month-week">
+      <h1>
+        <span id="currentMonth"></span>
+        <span id="currentWeek"></span>
+      </h1>
+    </div>
+    <form action="" id="scrapeForm" class="search-container">
+      <textarea id="summonerInput" class="search-input"
+        placeholder="Chilligan#NA1, Bypolarbear#smonk, Drug Or Not#Sasky, Dlash on D#skyxe, E G G B Ø I#NA1, Shíning#NA1, Juncture#NA1">Chilligan#NA1, Bypolarbear#smonk, Drug Or Not#Sasky</textarea>
       <input type="submit" class="search-button" value="Search" />
     </form>
   </div>
   <div class="loader" id="loader"></div>
   <div class="container" id="data-display">
-    <h1>Last 10 games</h1>
-    <div class="row">
-      <div class="list-container">
-        <div class="list-heading">Wins <span class="count" id="winsCount"></span></div>
-        <ul id="wins" class="list-items wins">
-        </ul>
-      </div>
-      <div class="list-container">
-        <div class="list-heading">Losses <span class="count" id="lossesCount"></span></div>
-        <ul id="losses" class="list-items losses">
-        </ul>
-      </div>
-    </div>
-    <div class="netLP">
-      <p>You spent <span id="timeDisplay"></span> grinding for <span id="lpDisplay"></span> LP</p>
+    <div id="summoner-stats-container">
+      <!-- Summoner stats will be inserted here -->
     </div>
   </div>
+  <footer>
+    <div class="container">
+      <p>This is not endorsed by Riot Games and does not reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games and all associated properties are trademarks or registered trademarks of Riot Games, Inc</p>
+    </div>
+  </footer>
 
   <script>
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+
+    const weeks = [
+      'week 1', 'week 2', 'week 3', 'week 4', 'week 5'
+    ];
+
+    const currentDate = new Date();
+    const currentMonth = months[currentDate.getMonth()];
+    const currentWeek = weeks[Math.floor(currentDate.getDate() / 7)];
+
+    document.getElementById('currentMonth').textContent = currentMonth;
+    document.getElementById('currentWeek').textContent = currentWeek;
+
     function formatString(input) {
-      let formattedString = input.toLowerCase();
-
-      formattedString = formattedString.replace(/#/g, '-');
-
-      return formattedString;
+      return input.toLowerCase().replace(/#/g, '-');
     }
 
-    function arrayDifference(arr1, arr2) {
-      const toNumbers = (arr) => arr.map(item => Number(item));
-      const lpDisplay = window.lpDisplay;
+    function arrayDifference(sequence) {
+      const toNumbers = (arr) => arr.map(item => Number(item.value));
 
-      const numArray1 = toNumbers(arr1);
-      const numArray2 = toNumbers(arr2);
+      const winArray = sequence.filter(item => item.type === 'win');
+      const lossArray = sequence.filter(item => item.type === 'loss');
 
-      const sum1 = numArray1.reduce((acc, num) => acc + num, 0);
+      const numWinArray = toNumbers(winArray);
+      const numLossArray = toNumbers(lossArray);
 
-      const sum2 = numArray2.reduce((acc, num) => acc + num, 0);
+      const sumWins = numWinArray.reduce((acc, num) => acc + num, 0);
+      const sumLosses = numLossArray.reduce((acc, num) => acc + num, 0);
 
-      const difference = sum1 - sum2;
+      const difference = sumWins - sumLosses;
 
-      const result = difference >= 0 ? `+ ${difference}` : `${difference}`;
-
-      lpDisplay.style.color = difference >= 0 ? 'green' : 'red';
-
-      return result;
+      return difference;
     }
 
     function convertMinutesToHoursAndMinutes(minutesArray) {
@@ -71,65 +82,161 @@
 
       const totalMinutes = numArray.reduce((acc, minutes) => acc + minutes, 0);
 
-      const hours = Math.floor(totalMinutes / 60);
-      const minutes = totalMinutes % 60;
+      const hours = totalMinutes / 60;
 
-      const result = `${hours} hour(s) and ${minutes} minute(s)`;
+      // Convert to string with one decimal place and remove trailing zero if needed
+      const decimalHours = parseFloat(hours.toFixed(1));
+
+      return `${decimalHours}`;
+    }
+
+    function addNumberSuffix(number) {
+      const suffix = (num) => {
+        if (num % 100 >= 11 && num % 100 <= 13) {
+          return 'th';
+        }
+        switch (num % 10) {
+          case 1: return 'st';
+          case 2: return 'nd';
+          case 3: return 'rd';
+          default: return 'th';
+        }
+      };
+
+      const result = `${number}${suffix(number)}`;
 
       return result;
     }
 
-    document.getElementById('scrapeForm').addEventListener('submit', async function (event) {
+    async function fetchSummonerData(summoner) {
+      const response = await fetch(`https://mobalyticscraper.loca.lt/api/data?url=${summoner}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'bypass-tunnel-reminder': 'yes'
+        },
+      
+      });
+      return await response.json();
+    }
+
+    function calculateWinRate(array) {
+      let winCount = 0;
+      for (let i = 0; i < array.length; i++) {
+        if (array[i].match.win === true) {
+          winCount++;
+        }
+      }
+      let winRate = (winCount / array.length) * 100;
+      return winRate.toFixed(2); // returns the win rate percentage rounded to two decimal places
+    }
+
+    async function handleFormSubmit(event) {
       event.preventDefault();
       const loader = document.getElementById('loader');
       const dataDisplay = document.getElementById('data-display');
+      const summonerStatsContainer = document.getElementById('summoner-stats-container');
 
       dataDisplay.classList.remove('show');
 
-      const summoner = formatString(document.getElementById('summonerInput').value);
-      if (!summoner) {
-        alert('Please enter a URL');
+      const summoners = document.getElementById('summonerInput').value.split(',').map(formatString);
+      if (summoners.length === 0) {
+        alert('Please enter at least one summoner name');
         return;
       }
 
       try {
         loader.classList.add('show');
-        const response = await fetch(`http://localhost:5000/api/data?url=${summoner}`);
-        const data = await response.json();
+        summonerStatsContainer.innerHTML = ''; // Clear previous results
 
-        console.log(data)
+        const allData = [];
 
-        const winsList = window.wins;
-        const lossesList = window.losses;
-        const lpDisplay = window.lpDisplay;
-        const winsCount = window.winsCount;
-        const lossesCount = window.lossesCount;
-        const timeDisplay = window.timeDisplay;
+        for (const summoner of summoners) {
+          const data = await fetchSummonerData(summoner);
+          console.log(data)
+          const scrapedData = data.scrape;
+          const apiData = data.api;
+          const netLP = arrayDifference(scrapedData.sequence);
+          const totalTime = scrapedData.times.reduce((acc, time) => acc + Number(time), 0);
+          allData.push({ summoner, scrapedData, apiData, netLP, totalTime });
+        }
 
-        const netLP = arrayDifference(data.wins, data.losses);
-        lpDisplay.textContent = netLP;
-
-        winsCount.textContent = `(${data.wins.length})`;
-        lossesCount.textContent = `(${data.losses.length})`;
-
-        timeDisplay.textContent = convertMinutesToHoursAndMinutes(data.times);
-
-        // Clear previous results
-        winsList.innerHTML = '';
-        lossesList.innerHTML = '';
-
-        data.wins.forEach(win => {
-          const listItem = document.createElement('li');
-          listItem.classList.add('list-item');
-          listItem.textContent = `+ ${win} LP`;
-          winsList.appendChild(listItem);
+        allData.sort((a, b) => {
+          if (a.totalTime === 0 && b.totalTime === 0) return 0;
+          if (a.totalTime === 0) return 1;
+          if (b.totalTime === 0) return -1;
+          if (b.netLP !== a.netLP) return b.netLP - a.netLP;
+          return a.totalTime - b.totalTime;
         });
 
-        data.losses.forEach(loss => {
-          const listItem = document.createElement('li');
-          listItem.classList.add('list-item');
-          listItem.textContent = `- ${loss} LP`;
-          lossesList.appendChild(listItem);
+        let i = 1;
+
+        allData.forEach(({ summoner, scrapedData, apiData, netLP, totalTime }) => {
+          const summonerName = summoner.replace(/-/g, '#').toUpperCase();
+
+          const summonerSection = document.createElement('div');
+          summonerSection.classList.add('summoner-section');
+
+          const sequenceList = document.createElement('ul');
+          sequenceList.classList.add('sequence-list');
+
+          scrapedData.sequence.forEach((item, index) => {
+            const sequenceItem = document.createElement('li');
+            sequenceItem.textContent = `${item.type == 'win' ? '+' : '-'}${item.value}`;
+            sequenceItem.classList.add(item.type);
+            sequenceList.appendChild(sequenceItem);
+          });
+
+          const timesList = document.createElement('ul');
+          timesList.classList.add('times-list');
+
+          scrapedData.times.forEach((time, index) => {
+            const timesItem = document.createElement('li');
+            timesItem.textContent = `${time}m`;
+            timesItem.classList.add('time');
+            timesList.appendChild(timesItem);
+          });
+
+          const timeSpent = totalTime > 0 ? convertMinutesToHoursAndMinutes(scrapedData.times) : 'No time spent';
+          const netLPString = netLP >= 0 ? `+${netLP}` : `${netLP}`;
+
+          summonerSection.innerHTML = `
+            <div class="summoner-card">
+              ${i === 1 ? '<img class="summoner-icon-border first" src="https://media.discordapp.net/attachments/1218314154721673248/1259209778065051790/first.png?ex=668ad9fe&is=6689887e&hm=18785fb3808036ce3318d25a87a53b941f9f0738fc2436ce947a469931b4214a&=&format=webp&quality=lossless" />' : ''}
+              ${i === 2 ? '<img class="summoner-icon-border second" src="https://media.discordapp.net/attachments/1218314154721673248/1259209778375163934/second.png?ex=668ad9fe&is=6689887e&hm=4fdbe6e61480940ca45044b06f12bd42e481ca56f40cb9b50a857b7b00f097e5&=&format=webp&quality=lossless" />' : ''}
+              ${i === 3 ? '<img class="summoner-icon-border third" src="https://media.discordapp.net/attachments/1218314154721673248/1259209778631151626/third.png?ex=668ad9fe&is=6689887e&hm=b665616f48d0e914afe809368744a2f063ed9ed113582586ccd1f701858c772b&=&format=webp&quality=lossless" />' : ''}
+              <img src="${scrapedData.pfpUrl}" alt="${summonerName}" class="summoner-icon" />
+              <div class="summoner-card-content">
+                <h2>${i === 1 || i === 2 || i === 3 ? '' : `${addNumberSuffix(i)}  `}${summonerName}</h2>
+                <div class="rank-info">
+                  <img src="${scrapedData.rankID.iconUrl}" alt="${scrapedData.rankID.rank}" class="rank-icon"/>
+                  <p class="tier chakra">${scrapedData.rankID.rank}</p>
+                </div>
+                ${apiData.matches.length > 0 ? `
+                <div class="weekly-data">
+                  <div class="row">
+                    ${apiData.matches.length > 0 ? `<p class="weekly-winrate chakra">${calculateWinRate(apiData.matches)}%</p>` : ''}
+                  </div>
+                </div>
+                ` : ''}
+                <div class="last-ten-data">
+                  <div class="row">
+                    <p class="elpee chakra"><span style="color: ${netLP >= 0 ? 'green' : 'red'};">${netLPString}</span> LP</p>
+                    <p class="time-spent chakra"><span>${timeSpent}</span> HR(S)</p>
+                  </div>
+                  <div class="row">
+                    ${sequenceList.outerHTML}
+                  </div>
+                  <div class="row">
+                    ${timesList.outerHTML}
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+
+          summonerStatsContainer.appendChild(summonerSection);
+          i++;
         });
 
         loader.classList.remove('show');
@@ -138,7 +245,9 @@
         loader.classList.remove('show');
         console.error('Error fetching data:', error);
       }
-    });
+    }
+
+    document.getElementById('scrapeForm').addEventListener('submit', handleFormSubmit);
   </script>
 </body>
 
