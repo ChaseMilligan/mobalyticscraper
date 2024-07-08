@@ -11,9 +11,17 @@
 <body>
   <div class="container">
     <form action="" id="scrapeForm" class="search-container">
-      <textarea id="summonerInput" class="search-input"
-        placeholder="Chilligan#NA1, Bypolarbear#smonk, Drug Or Not#Sasky, Dlash on D#skyxe, E G G B Ø I#NA1, Shíning#NA1, Juncture#NA1">Chilligan#NA1,Bypolarbear#smonk,Drug Or Not#Sasky,Dlash on D#skyxe,E G G B Ø I#NA1,Shíning#NA1,Juncture#NA1</textarea>
-      <input type="submit" class="search-button" value="Search" />
+      <div class="radio-buttons">
+        <input checked type="radio" id="rankedSolo" name="gameMode" value="RANKED_SOLO">
+        <label for="rankedSolo">Ranked Solo</label>
+        <input type="radio" id="rankedFives" name="gameMode" value="RANKED_FLEX">
+        <label for="rankedFives">Ranked Fives</label>
+      </div>
+      <div>
+        <textarea id="summonerInput" class="search-input"
+          placeholder="Chilligan#NA1, Bypolarbear#smonk, Drug Or Not#Sasky, Dlash on D#skyxe, E G G B Ø I#NA1, Shíning#NA1, Juncture#NA1">Chilligan#NA1,Bypolarbear#smonk,Drug Or Not#Sasky,Dlash on D#skyxe,E G G B Ø I#NA1,Shíning#NA1,Juncture#NA1</textarea>
+        <input type="submit" class="search-button" value="Search" />
+      </div>
     </form>
   </div>
   <div class="loader" id="loader"></div>
@@ -73,8 +81,8 @@
       return result;
     }
 
-    async function fetchSummonerData(summoner) {
-      const response = await fetch(`http://localhost:5000/api/data?url=${summoner}`);
+    async function fetchSummonerData(summoner, gameMode = 'RANKED_SOLO') {
+      const response = await fetch(`http://localhost:5000/api/data?url=${summoner}&gameMode=${gameMode}`);
       return await response.json();
     }
 
@@ -87,6 +95,7 @@
       dataDisplay.classList.remove('show');
 
       const summoners = document.getElementById('summonerInput').value.split(',').map(formatString);
+      const gameMode = document.querySelector('input[name="gameMode"]:checked').value;
       if (summoners.length === 0) {
         alert('Please enter at least one summoner name');
         return;
@@ -99,7 +108,7 @@
         const allData = [];
 
         for (const summoner of summoners) {
-          const data = await fetchSummonerData(summoner);
+          const data = await fetchSummonerData(summoner, gameMode);
           const netLP = arrayDifference(data.wins, data.losses);
           const totalTime = data.times.reduce((acc, time) => acc + Number(time), 0);
           allData.push({ summoner, data, netLP, totalTime });

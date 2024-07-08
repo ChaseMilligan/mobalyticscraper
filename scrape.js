@@ -52,8 +52,8 @@ async function extractElements(url) {
 }
 
 app.get('/api/data', async (req, res) => {
-    console.log(`Win/Loss Request received for summoner: ${req.query.url}`)
-    const url = `https://mobalytics.gg/lol/profile/na/${req.query.url}/overview?c_queue=RANKED_SOLO`; // Get the URL from query parameters
+    console.log(`${req.query.gameMode} Win/Loss Request received for summoner: ${req.query.url}`)
+    const url = `https://mobalytics.gg/lol/profile/na/${req.query.url}/overview?c_queue=${req.query.gameMode}`; // Get the URL from query parameters
     if (!url) {
         return res.status(400).json({ error: 'URL parameter is required' });
     }
