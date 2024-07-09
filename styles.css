@@ -166,6 +166,57 @@ p {
   text-wrap: nowrap;
 }
 
+.monthly-data {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: -webkit-fit-content;
+  max-width: 100%;
+  min-width: 80%;
+  padding: 8px;
+  border-radius: 16px;
+  border: solid 1px #4b4b4b;
+  margin-top: 32px;
+  position: relative;
+}
+
+.monthly-data .row {
+  gap: 8px;
+  justify-content: space-evenly;
+  flex-wrap: wrap;
+}
+
+.monthly-data .row div {
+  min-width: calc(100% / 3);
+  text-align: center;
+}
+
+.monthly-data p {
+  font-size: 36px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.monthly-data p span {
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.monthly-data::before {
+  content: "This month";
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #ffffff;
+  position: absolute;
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 16px;
+  padding-bottom: 0;
+  background-color: #3b3b3b;
+}
+
 .last-ten-data {
   display: flex;
   flex-direction: column;
