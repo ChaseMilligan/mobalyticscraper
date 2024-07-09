@@ -139,6 +139,14 @@ function getLastMonday() {
 	}
 }
 
+function getFirstDayOfCurrentMonth() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const firstDay = new Date(year, month, 1);
+    return firstDay;
+}
+
 function splitString(inputString) {
     // Split the string by the hyphen
     let resultArray = inputString.split('-');
@@ -152,9 +160,9 @@ async function main(riotId, tagLine) {
 	const puuid = await getPuuid(riotId, tagLine);
 
 	const today = moment();
-	const lastMonday = getLastMonday();
+	const firstOfMonth = getFirstDayOfCurrentMonth();
 
-	const matchIds = await getMatchHistory(puuid, lastMonday.toDate().getTime());
+	const matchIds = await getMatchHistory(puuid, firstOfMonth.getTime());
 
 	const matchDetailsPromises = matchIds.map(matchId => getMatchDetails(matchId));
 	const matchDetails = await Promise.all(matchDetailsPromises);
@@ -162,7 +170,7 @@ async function main(riotId, tagLine) {
 	// Filter matches within the desired time frame
 	const filteredMatches = matchDetails.filter(match => {
 		const matchDate = moment(match.info.gameStartTimestamp);
-		return matchDate.isBetween(lastMonday, today);
+		return matchDate.isBetween(firstOfMonth, today);
 	});
 
 	// Extract the required data

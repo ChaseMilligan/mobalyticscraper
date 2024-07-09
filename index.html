@@ -21,7 +21,7 @@
     </div>
     <form action="" id="scrapeForm" class="search-container">
       <textarea id="summonerInput" class="search-input"
-        placeholder="Chilligan#NA1, Bypolarbear#smonk, Drug Or Not#Sasky, Dlash on D#skyxe, E G G B Ø I#NA1, Shíning#NA1, Juncture#NA1">Chilligan#NA1, Bypolarbear#smonk, Drug Or Not#Sasky</textarea>
+        placeholder="Chilligan#NA1,Bypolarbear#smonk,Drug Or Not#Sasky,Dlash on D#skyxe, E G G B Ø I#NA1,Shíning#NA1,Juncture#NA1">Chilligan#NA1,Bypolarbear#smonk,Drug Or Not#Sasky,Dlash on D#skyxe, E G G B Ø I#NA1,Shíning#NA1</textarea>
       <input type="submit" class="search-button" value="Search" />
     </form>
   </div>
@@ -131,6 +131,44 @@
       return winRate.toFixed(2); // returns the win rate percentage rounded to two decimal places
     }
 
+    function calculateAverageKDA(matches) {
+      let totalKills = 0;
+      let totalDeaths = 0;
+      let totalAssists = 0;
+
+      matches.forEach(matchData => {
+        const kda = matchData.match.kda;
+        totalKills += kda.kills;
+        totalDeaths += kda.deaths;
+        totalAssists += kda.assists;
+      });
+
+      const totalMatches = matches.length;
+      const averageKills = totalKills / totalMatches;
+      const averageDeaths = totalDeaths / totalMatches;
+      const averageAssists = totalAssists / totalMatches;
+
+      const kdaRatio = (totalKills + totalAssists) / totalDeaths;
+
+      return {
+          averageKills: averageKills.toFixed(1),
+          averageDeaths: averageDeaths.toFixed(1),
+          averageAssists: averageAssists.toFixed(1),
+          kdaRatio: kdaRatio.toFixed(2) // KDA ratio rounded to two decimal places
+      };
+    }
+
+    function calculateTotalGameTime(matches) {
+      let totalGameTimeMinutes = 0;
+
+      matches.forEach(matchData => {
+          totalGameTimeMinutes += matchData.match.gameTimeMinutes;
+      });
+
+      const totalGameTimeHours = totalGameTimeMinutes / 60;
+      return totalGameTimeHours.toFixed(1); // returns the total game time in hours to one decimal place
+    }
+
     async function handleFormSubmit(event) {
       event.preventDefault();
       const loader = document.getElementById('loader');
@@ -213,9 +251,25 @@
                   <p class="tier chakra">${scrapedData.rankID.rank}</p>
                 </div>
                 ${apiData.matches.length > 0 ? `
-                <div class="weekly-data">
+                <div class="monthly-data">
                   <div class="row">
-                    ${apiData.matches.length > 0 ? `<p class="weekly-winrate chakra">${calculateWinRate(apiData.matches)}%</p>` : ''}
+                    <div>
+                      <p class="chakra">${apiData.matches.length}</p>
+                      <strong>Matches Played</strong>
+                    </div>
+                    <div>
+                      <p class="monthly-winrate chakra">${calculateWinRate(apiData.matches)}%</p>
+                      <strong>Win Rate</strong>
+                    </div>
+                    <div>
+                      <p style="display: none;">${{ averageKills, averageDeaths, averageAssists, kdaRatio } = calculateAverageKDA(apiData.matches)}</p>
+                      <p class="chakra kda">${kdaRatio}<span>Avg KDA</span></p>
+                      <strong>${averageKills}/${averageDeaths}/${averageAssists}</strong>
+                    </div>
+                    <div>
+                      <p class="chakra">${calculateTotalGameTime(apiData.matches)}h</p>
+                      <strong>Total Game Time</strong>
+                    </div>
                   </div>
                 </div>
                 ` : ''}
