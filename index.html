@@ -169,6 +169,41 @@
       return totalGameTimeHours.toFixed(1); // returns the total game time in hours to one decimal place
     }
 
+    // Function to calculate the performance score
+    function calculatePerformanceScore(player) {
+      const totalGames = player.matches.length;
+      const wins = player.matches.filter(match => match.match.win).length;
+      const winRate = wins / totalGames;
+
+      const totalKDA = player.matches.reduce((acc, match) => {
+        acc.kills += match.match.kda.kills;
+        acc.assists += match.match.kda.assists;
+        acc.deaths += match.match.kda.deaths;
+        return acc;
+      }, { kills: 0, assists: 0, deaths: 0 });
+
+      const avgKDA = (totalKDA.kills + totalKDA.assists) / (totalKDA.deaths || 1); // Prevent division by zero
+
+      const totalGameTime = player.matches.reduce((acc, match) => acc + match.match.gameTimeMinutes, 0);
+
+      const weightTotalGames = 0.2;
+      const weightWinRate = 0.4;
+      const weightAvgKDA = 0.3;
+      const weightTotalGameTime = 0.1;
+
+      console.log(totalGames * weightTotalGames +
+        winRate * 100 * weightWinRate +
+        avgKDA * weightAvgKDA -
+        totalGameTime / 10 * weightTotalGameTime);
+
+      return (
+        totalGames * weightTotalGames +
+        winRate * 100 * weightWinRate +
+        avgKDA * weightAvgKDA -
+        totalGameTime / 10 * weightTotalGameTime
+      );
+    }
+
     async function handleFormSubmit(event) {
       event.preventDefault();
       const loader = document.getElementById('loader');
@@ -200,11 +235,9 @@
         }
 
         allData.sort((a, b) => {
-          if (a.totalTime === 0 && b.totalTime === 0) return 0;
-          if (a.totalTime === 0) return 1;
-          if (b.totalTime === 0) return -1;
-          if (b.netLP !== a.netLP) return b.netLP - a.netLP;
-          return a.totalTime - b.totalTime;
+          const scoreA = calculatePerformanceScore(a.apiData);
+          const scoreB = calculatePerformanceScore(b.apiData);
+          return scoreB - scoreA; // Sort in descending order
         });
 
         let i = 1;
@@ -235,14 +268,14 @@
             timesList.appendChild(timesItem);
           });
 
-          const timeSpent = totalTime > 0 ? convertMinutesToHoursAndMinutes(scrapedData.times) : 'No time spent';
+          const timeSpent = totalTime > 0 ? convertMinutesToHoursAndMinutes(scrapedData.times) : '0';
           const netLPString = netLP >= 0 ? `+${netLP}` : `${netLP}`;
 
           summonerSection.innerHTML = `
             <div class="summoner-card">
-              ${i === 1 ? '<img class="summoner-icon-border first" src="https://media.discordapp.net/attachments/1218314154721673248/1259209778065051790/first.png?ex=668ad9fe&is=6689887e&hm=18785fb3808036ce3318d25a87a53b941f9f0738fc2436ce947a469931b4214a&=&format=webp&quality=lossless" />' : ''}
-              ${i === 2 ? '<img class="summoner-icon-border second" src="https://media.discordapp.net/attachments/1218314154721673248/1259209778375163934/second.png?ex=668ad9fe&is=6689887e&hm=4fdbe6e61480940ca45044b06f12bd42e481ca56f40cb9b50a857b7b00f097e5&=&format=webp&quality=lossless" />' : ''}
-              ${i === 3 ? '<img class="summoner-icon-border third" src="https://media.discordapp.net/attachments/1218314154721673248/1259209778631151626/third.png?ex=668ad9fe&is=6689887e&hm=b665616f48d0e914afe809368744a2f063ed9ed113582586ccd1f701858c772b&=&format=webp&quality=lossless" />' : ''}
+              ${i === 1 ? '<img class="summoner-icon-border first" src="./images/first.png" />' : ''}
+              ${i === 2 ? '<img class="summoner-icon-border second" src="./images/second.png" />' : ''}
+              ${i === 3 ? '<img class="summoner-icon-border third" src="./images/third.png" />' : ''}
               <img src="${scrapedData.pfpUrl}" alt="${summonerName}" class="summoner-icon" />
               <div class="summoner-card-content">
                 <h2>${i === 1 || i === 2 || i === 3 ? '' : `${addNumberSuffix(i)}  `}${summonerName}</h2>
@@ -252,6 +285,7 @@
                 </div>
                 ${apiData.matches.length > 0 ? `
                 <div class="monthly-data">
+                  <p style="text-align: center" class="performance-score chakra">Score: ${Math.ceil((calculatePerformanceScore(apiData) * 10) / 10)}</p>
                   <div class="row">
                     <div>
                       <p class="chakra">${apiData.matches.length}</p>

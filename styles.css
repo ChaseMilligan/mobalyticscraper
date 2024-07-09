@@ -153,6 +153,7 @@ p {
 }
 
 .rank-info p {
+  color: #fff;
   font-size: 20px;
   position: absolute;
   top: 50%;
@@ -187,6 +188,12 @@ p {
 .monthly-data .row div {
   min-width: calc(100% / 3);
   text-align: center;
+}
+
+.performance-score {
+  width: 100%;
+  border-bottom: solid 1px #4b4b4b;
+  text-transform: uppercase;
 }
 
 .monthly-data p {
