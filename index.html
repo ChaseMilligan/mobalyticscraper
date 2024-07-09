@@ -186,10 +186,10 @@
 
       const totalGameTime = player.matches.reduce((acc, match) => acc + match.match.gameTimeMinutes, 0);
 
-      const weightTotalGames = 0.2;
-      const weightWinRate = 0.4;
-      const weightAvgKDA = 0.3;
-      const weightTotalGameTime = 0.1;
+      const weightTotalGames = 0.55;
+      const weightWinRate = 0.35;
+      const weightAvgKDA = 0.05;
+      const weightTotalGameTime = 0.05;
 
       console.log(totalGames * weightTotalGames +
         winRate * 100 * weightWinRate +
