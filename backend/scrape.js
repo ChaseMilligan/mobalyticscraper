@@ -14,7 +14,7 @@ const apiKey = process.env.RIOT_API_KEY;
 const region = 'americas';
 
 var corsOptions = {
-    origin: "https://chasemilligan.github.io/",
+    origin: "*",
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
 }
 
@@ -305,10 +305,10 @@ async function main(riotId, tagLine, queueType) {
 
 	const matchIds = await getMatchHistory(puuid, firstOfMonth.getTime(), queueType);
 
-    const matchDetailsPromises = matchIds.map((matchId) => {
+	const matchDetailsPromises = matchIds.map((matchId) => {
         setTimeout(() => {
             console.log('waiting...')
-        }, 2000)
+        }, 5000)
         return getMatchDetails(matchId)
     });
 	const matchDetails = await Promise.all(matchDetailsPromises);
@@ -343,6 +343,15 @@ async function main(riotId, tagLine, queueType) {
 
 	return results;
 }
+
+app.use((req, res, next) => {
+  const allowedOrigin = '*'; // Without trailing slash
+  res.header('Access-Control-Allow-Origin', allowedOrigin);
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE');
+	res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+	res.setHeader('Permissions-Policy', 'interest-cohort=()');
+  next();
+});
 
 app.get('/api/data', async (req, res) => {
     console.log(`Win/Loss Request received for summoner: ${req.query.url}`)
