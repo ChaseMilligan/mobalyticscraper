@@ -14,7 +14,7 @@ const apiKey = process.env.RIOT_API_KEY;
 const region = 'americas';
 
 var corsOptions = {
-    origin: "*",
+    origin: "https://chasemilligan.github.io/",
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
 }
 
