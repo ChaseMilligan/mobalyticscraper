@@ -1,4 +1,5 @@
 const { chromium } = require('playwright');
+const postgres = require('postgres');
 const cheerio = require('cheerio');
 const axios = require('axios');
 const moment = require('moment');
@@ -12,11 +13,69 @@ const PORT = process.env.PORT;
 const apiKey = process.env.RIOT_API_KEY;
 const region = 'americas';
 
-app.use(cors()); // Enable CORS for all routes
+var corsOptions = {
+    origin: "*",
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+}
+
+app.use(cors(corsOptions)); // Enable CORS for all routes
 
 const tunnel = localtunnel(PORT, { subdomain: 'mobalyticscraper'}, (err, tunnel) => {
     console.log('Tunnel URL: ' + tunnel.url);
 });
+
+// app.js
+let { PGHOST, PGDATABASE, PGUSER, PGPASSWORD, ENDPOINT_ID } = process.env;
+
+const sql = postgres({
+  host: PGHOST,
+  database: PGDATABASE,
+  username: PGUSER,
+  password: PGPASSWORD,
+  port: 5432,
+  ssl: 'require',
+  connection: {
+    options: `project=${ENDPOINT_ID}`,
+  },
+});
+
+// Function to create the user matches table
+async function createUserMatchesTable() {
+  const createUserTableQuery = `
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      summoner_name VARCHAR(100) NOT NULL,
+      pfp_url VARCHAR(255),
+      rank VARCHAR(50),
+      rank_icon_url VARCHAR(255)
+    );
+  `;
+
+	const createMatchesTableQuery = `
+    CREATE TABLE IF NOT EXISTS matches (
+      id SERIAL PRIMARY KEY,
+      summoner_name VARCHAR(100) NOT NULL,
+			matchID VARCHAR(100) NOT NULL,
+      queue_type VARCHAR(50),
+			game_time_minutes DECIMAL,
+			assists INTEGER,
+      deaths INTEGER,
+      kills INTEGER,
+      win VARCHAR(50)
+    );
+  `;
+
+  try {
+		await sql.unsafe(createUserTableQuery);
+		await sql.unsafe(createMatchesTableQuery);
+    console.log('User matches table created successfully');
+  } catch (err) {
+    console.error('Error creating user matches table:', err);
+  }
+}
+
+// Connect to the PostgreSQL server and create the table
+createUserMatchesTable();
 
 function removeNonNumerical(input) {
   let numericalString = input.replace(/\D/g, '');
@@ -35,7 +94,7 @@ async function scrapeHTML(url) {
     return htmlContent;
 }
 
-async function extractElements(url) {
+async function extractElements(url, queueType) {
     const htmlContent = await scrapeHTML(url);
     const $ = cheerio.load(htmlContent);
     const results = {
@@ -71,15 +130,43 @@ async function extractElements(url) {
         results.pfpUrl = $(element).attr('src');
     });
 
-    if ($('div.m-1spa8xs div.m-jnvb0').text().includes('Ranked Solo')) {
-        $('div.m-1spa8xs img.m-17nwc').each((index, element1) => {
-            results.rankID.iconUrl = $(element1).attr('src');
-        });
+    if (queueType === 'solo') {
+        if ($('div.m-1spa8xs div.m-jnvb0').text().includes('Ranked Solo')) {
+            $('div.m-1spa8xs img.m-17nwc').each((index, element1) => {
+                results.rankID.iconUrl = $(element1).attr('src');
+            });
 
-        // Extract rank
-        $('div.m-1spa8xs div.m-1gydigm').each((index, element2) => {
-            results.rankID.rank = $(element2).text();
-        });
+            // Extract rank
+            $('div.m-1spa8xs div.m-1gydigm').each((index, element2) => {
+                results.rankID.rank = $(element2).text();
+            });
+        }
+    } else {
+        if ($('div.m-1spa8xs div.m-jnvb0').text().includes('Ranked Flex')) {
+            $('div.m-1spa8xs img.m-17nwc').each((index, element1) => {
+                results.rankID.iconUrl = $(element1).attr('src');
+            });
+
+            // Extract rank
+            $('div.m-1spa8xs div.m-1gydigm').each((index, element2) => {
+                results.rankID.rank = $(element2).text();
+            });
+        } else if ($('div.m-1vuvcj3 div.m-jnvb0').text().includes('Ranked Flex')) {
+            $('div.m-1vuvcj3 img.m-17nwc').each((index, element1) => {
+                if (index !== 0) {
+                    return;
+                }
+                results.rankID.iconUrl = $(element1).attr('src');
+            });
+
+            // Extract rank
+            $('div.m-1vuvcj3 div.m-1gydigm').each((index, element2) => {
+                if (index !== 0) {
+                    return;
+                }
+                results.rankID.rank = $(element2).text();
+            });
+        }
     }
 
     console.log(results);
@@ -101,13 +188,14 @@ async function getPuuid(riotId, tagLine) {
 }
 
 // Function to get match history
-async function getMatchHistory(puuid, startTime) {
+async function getMatchHistory(puuid, startTime, queueType) {
+    console.log(queueType)
 	try {
 		const response = await axios.get(`https://${region}.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids`, {
 			headers: { 'X-Riot-Token': apiKey },
 			params: {
 				startTime: Math.floor(startTime / 1000), // Convert to seconds
-				queue: 420, // 420 is the queue ID for Ranked Solo/Duo
+				queue: queueType === 'solo' ? 420 : 440, // 420 is the queue ID for Ranked Solo/Duo and 440 is for flex
 			}
 		});
 		return response.data;
@@ -121,21 +209,10 @@ async function getMatchDetails(matchId) {
 	try {
 		const response = await axios.get(`https://${region}.api.riotgames.com/lol/match/v5/matches/${matchId}`, {
 			headers: { 'X-Riot-Token': apiKey }
-		});
+        });
 		return response.data;
 	} catch (error) {
 		console.error('Error fetching match details:', error);
-	}
-}
-
-// Function to get the last Monday
-function getLastMonday() {
-	const today = moment();
-	const dayOfWeek = today.day(); // 0 is Sunday, 1 is Monday, ..., 6 is Saturday
-	if (dayOfWeek === 0) {
-		return today.subtract(6, 'days').startOf('day'); // Last Monday if today is Sunday
-	} else {
-		return today.subtract(dayOfWeek - 1, 'days').startOf('day'); // Last Monday for other days
 	}
 }
 
@@ -155,21 +232,86 @@ function splitString(inputString) {
 
 //END RIOT API helpers
 
+async function insertData(data, queueType) {
+  const insertUserQuery = `
+    INSERT INTO users (
+      summoner_name,
+      pfp_url,
+      rank,
+      rank_icon_url
+    ) VALUES (
+      $1, $2, $3, $4
+    ) ON CONFLICT (summoner_name) DO UPDATE SET;
+  `;
+
+	const insertMatchesQuery = `
+    INSERT INTO matches (
+      summoner_name,
+			matchID,
+      queue_type,
+			game_time_minutes,
+			assists,
+			deaths,
+			kills,
+			win
+    ) VALUES (
+      $1, $2, $3, $4, $5, $6, $7, $8
+    ) ON CONFLICT (summoner_name, matchID) DO UPDATE SET;
+  `;
+
+	try {
+		const userValues = [
+			data.api.summoner.name,
+			data.scrape.pfpUrl,
+			data.scrape.rankID.rank,
+			data.scrape.rankID.iconUrl
+		];
+
+		await sql.unsafe(insertUserQuery, userValues);
+    console.log('User data inserted successfully');
+
+		for (const match of data.api.matches) {
+			const matchValues = [
+				data.api.summoner.name,
+				match.match.matchID,
+				queueType,
+				match.match.gameTimeMinutes,
+				match.match.kda.assists,
+				match.match.kda.deaths,
+				match.match.kda.kills,
+				match.match.win,
+			];
+
+			await sql.unsafe(insertMatchesQuery, matchValues);
+    	console.log('Match data inserted successfully');
+		}
+		
+  } catch (err) {
+    console.error('Error inserting data:', err);
+  }
+}
+
 //RIOT API MAIN
-async function main(riotId, tagLine) {
+async function main(riotId, tagLine, queueType) {
+    console.log('Main function called', queueType)
 	const puuid = await getPuuid(riotId, tagLine);
 
 	const today = moment();
 	const firstOfMonth = getFirstDayOfCurrentMonth();
 
-	const matchIds = await getMatchHistory(puuid, firstOfMonth.getTime());
+	const matchIds = await getMatchHistory(puuid, firstOfMonth.getTime(), queueType);
 
-	const matchDetailsPromises = matchIds.map(matchId => getMatchDetails(matchId));
+    const matchDetailsPromises = matchIds.map((matchId) => {
+        setTimeout(() => {
+            console.log('waiting...')
+        }, 2000)
+        return getMatchDetails(matchId)
+    });
 	const matchDetails = await Promise.all(matchDetailsPromises);
 
 	// Filter matches within the desired time frame
 	const filteredMatches = matchDetails.filter(match => {
-		const matchDate = moment(match.info.gameStartTimestamp);
+		const matchDate = moment(match?.info.gameStartTimestamp);
 		return matchDate.isBetween(firstOfMonth, today);
 	});
 
@@ -182,6 +324,7 @@ async function main(riotId, tagLine) {
 		const participant = match.info.participants.find(p => p.puuid === puuid);
 		return {
 			match: {
+				matchID: match.metadata.matchId,
 				gameTimeMinutes: match.info.gameDuration / 60,
 				win: participant.win,
 				kda: {
@@ -199,19 +342,20 @@ async function main(riotId, tagLine) {
 
 app.get('/api/data', async (req, res) => {
     console.log(`Win/Loss Request received for summoner: ${req.query.url}`)
-    const url = `https://mobalytics.gg/lol/profile/na/${req.query.url}/overview?c_queue=RANKED_SOLO`; // Get the URL from query parameters
+    const queueType = req.query.type === 'solo' ? 'RANKED_SOLO' : 'RANKED_FLEX';
+
+    const url = `https://mobalytics.gg/lol/profile/na/${req.query.url}/overview?c_queue=${queueType}`; // Get the URL from query parameters
     if (!url) {
         return res.status(400).json({ error: 'URL parameter is required' });
     }
     
     try {
-        console.log(`Scraping data from: ${url}`);
-        const data = await extractElements(url);
+        const data = await extractElements(url, req.query.type);
         const riotID = encodeURIComponent(splitString(req.query.url)[0]);
         const tagLine = splitString(req.query.url)[1];
-        main(riotID, tagLine).then(results => {
-            console.log(results);
-            res.json({scrape: data, api: results});
+        main(riotID, tagLine, req.query.type).then(results => {
+					res.json({ scrape: data, api: results });
+					insertData({ scrape: data, api: results }, req.query.type);
             console.log('Data sent successfully');
         }).catch(error => {
             console.error('Error in main function:', error);

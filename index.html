@@ -19,10 +19,19 @@
         <span id="currentWeek"></span>
       </h1>
     </div>
-    <form action="" id="scrapeForm" class="search-container">
-      <textarea id="summonerInput" class="search-input"
-        placeholder="Chilligan#NA1,Bypolarbear#smonk,Drug Or Not#Sasky,Dlash on D#skyxe, E G G B Ø I#NA1,Shíning#NA1,Juncture#NA1">Chilligan#NA1,Bypolarbear#smonk,Drug Or Not#Sasky,Dlash on D#skyxe, E G G B Ø I#NA1,Shíning#NA1</textarea>
-      <input type="submit" class="search-button" value="Search" />
+    <form action="" id="scrapeForm">
+      <div class="radio-container">
+        <input checked type="radio" name="rankedChoice" id="rankedSolo" value="solo" hidden>
+        <label for="rankedSolo" class="option chakra active">Solo</label>
+      
+        <input type="radio" name="rankedChoice" id="rankedFlex" value="flex" hidden>
+        <label for="rankedFlex" class="option chakra">Flex</label>
+      </div>
+      <div class="search-container">
+        <textarea id="summonerInput" class="search-input"
+          placeholder="Chilligan#NA1,Bypolarbear#smonk,Drug Or Not#Sasky,Dlash on D#skyxe, E G G B Ø I#NA1,Shíning#NA1,Juncture#NA1">Chilligan#NA1,Bypolarbear#smonk,Drug Or Not#Sasky,Dlash on D#skyxe, E G G B Ø I#NA1,Shíning#NA1</textarea>
+        <input type="submit" class="search-button" value="Search" />
+      </div>
     </form>
   </div>
   <div class="loader" id="loader"></div>
@@ -37,6 +46,7 @@
     </div>
   </footer>
 
+  <script src="scripts.js"></script>
   <script>
     const months = [
       'January', 'February', 'March', 'April', 'May', 'June',
@@ -108,11 +118,13 @@
       return result;
     }
 
-    async function fetchSummonerData(summoner) {
-      const response = await fetch(`https://mobalyticscraper.loca.lt/api/data?url=${summoner}`, {
+    async function fetchSummonerData(summoner, queueType) {
+      const response = await fetch(`https://mobalyticscraper.loca.lt/api/data?url=${summoner}&type=${queueType}`, {
         method: 'GET',
         headers: {
+          'Origin': 'localhost',
           'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
           'bypass-tunnel-reminder': 'yes'
         },
       
@@ -218,6 +230,11 @@
         return;
       }
 
+      const form = document.getElementById('scrapeForm');
+      const radioButton = form.querySelector('input[type="radio"]:checked');
+      const queueType = radioButton.value;
+      
+
       try {
         loader.classList.add('show');
         summonerStatsContainer.innerHTML = ''; // Clear previous results
@@ -225,13 +242,13 @@
         const allData = [];
 
         for (const summoner of summoners) {
-          const data = await fetchSummonerData(summoner);
+          const data = await fetchSummonerData(summoner, queueType);
           console.log(data)
           const scrapedData = data.scrape;
           const apiData = data.api;
           const netLP = arrayDifference(scrapedData.sequence);
           const totalTime = scrapedData.times.reduce((acc, time) => acc + Number(time), 0);
-          allData.push({ summoner, scrapedData, apiData, netLP, totalTime });
+          allData.push({ summoner, scrapedData, apiData, netLP, totalTime, queueType });
         }
 
         allData.sort((a, b) => {
@@ -242,7 +259,7 @@
 
         let i = 1;
 
-        allData.forEach(({ summoner, scrapedData, apiData, netLP, totalTime }) => {
+        allData.forEach(({ summoner, scrapedData, apiData, netLP, totalTime, queueType }) => {
           const summonerName = summoner.replace(/-/g, '#').toUpperCase();
 
           const summonerSection = document.createElement('div');
@@ -307,6 +324,7 @@
                   </div>
                 </div>
                 ` : ''}
+                ${queueType === 'solo' ? `
                 <div class="last-ten-data">
                   <div class="row">
                     <p class="elpee chakra"><span style="color: ${netLP >= 0 ? 'green' : 'red'};">${netLPString}</span> LP</p>
@@ -318,7 +336,7 @@
                   <div class="row">
                     ${timesList.outerHTML}
                   </div>
-                </div>
+                </div>` : ''}
               </div>
             </div>
           `;

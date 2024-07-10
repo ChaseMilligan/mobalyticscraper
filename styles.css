@@ -66,6 +66,7 @@ p {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   overflow: hidden;
   width: 100%;
+  border: 1px solid #ccc;
 }
 
 .search-input {
@@ -88,6 +89,39 @@ p {
 
 .search-button:hover {
   background-color: #0056b3;
+}
+
+.radio-container {
+  display: flex;
+  border: 1px solid #ccc;
+  border-radius: 30px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.radio-container .option {
+  font-size: 28px;
+  padding: 10px 40px;
+  cursor: pointer;
+  background-color: #4b4b4b;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  text-align: center;
+  width: 100%;
+  text-transform: uppercase;
+}
+
+.radio-container .option:not(:last-child) {
+  border-right: 1px solid #ccc;
+}
+
+.radio-container .option:hover {
+  background-color: #007bff;
+  color: #fff;
+}
+
+.radio-container .option.active {
+  background-color: #007bff;
+  color: #fff;
 }
 
 .summoner-card {
