@@ -44,7 +44,7 @@ async function createUserMatchesTable() {
   const createUserTableQuery = `
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
-      summoner_name VARCHAR(100) NOT NULL,
+      summoner_name VARCHAR(100) NOT NULL UNIQUE,
       pfp_url VARCHAR(255),
       rank VARCHAR(50),
       rank_icon_url VARCHAR(255)
@@ -55,7 +55,7 @@ async function createUserMatchesTable() {
     CREATE TABLE IF NOT EXISTS matches (
       id SERIAL PRIMARY KEY,
       summoner_name VARCHAR(100) NOT NULL,
-			matchID VARCHAR(100) NOT NULL,
+			matchID VARCHAR(100) NOT NULL UNIQUE,
       queue_type VARCHAR(50),
 			game_time_minutes DECIMAL,
 			assists INTEGER,
@@ -241,7 +241,7 @@ async function insertData(data, queueType) {
       rank_icon_url
     ) VALUES (
       $1, $2, $3, $4
-    ) ON CONFLICT (summoner_name) DO UPDATE SET;
+    );
   `;
 
 	const insertMatchesQuery = `
@@ -256,7 +256,7 @@ async function insertData(data, queueType) {
 			win
     ) VALUES (
       $1, $2, $3, $4, $5, $6, $7, $8
-    ) ON CONFLICT (summoner_name, matchID) DO UPDATE SET;
+    );
   `;
 
 	try {
@@ -268,12 +268,17 @@ async function insertData(data, queueType) {
 		];
 
 		await sql.unsafe(insertUserQuery, userValues);
-    console.log('User data inserted successfully');
-
+    console.log('User data inserted successfully');		
+  } catch (err) {
+    console.error('Error inserting user data:', err);
+	}
+	
+	try {
 		for (const match of data.api.matches) {
+			console.log('Inserting match data:', match, queueType)
 			const matchValues = [
 				data.api.summoner.name,
-				match.match.matchID,
+				`${data.api.summoner.name}_${match.match.matchID}`,				
 				queueType,
 				match.match.gameTimeMinutes,
 				match.match.kda.assists,
@@ -285,10 +290,9 @@ async function insertData(data, queueType) {
 			await sql.unsafe(insertMatchesQuery, matchValues);
     	console.log('Match data inserted successfully');
 		}
-		
-  } catch (err) {
-    console.error('Error inserting data:', err);
-  }
+	} catch (err) {
+		console.error('Error inserting match data:', err);
+	}
 }
 
 //RIOT API MAIN
