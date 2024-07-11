@@ -391,8 +391,15 @@ app.get('/api/users', async (req, res) => {
 
 app.get('/api/matches', async (req, res) => {
 		try {
-				const summonerName = req.query.summonerName; // Get the summoner name from query parameters
-				const matches = await sql`SELECT * FROM matches WHERE summoner_name = ${summonerName}`;
+				const summonerName = req.query.summoner_name;
+				const month = req.query.month;
+
+				const matches = await sql`
+					SELECT *
+					FROM matches
+					WHERE summoner_name = ${summonerName}
+					AND WHERE month = ${month}
+				`;
 				res.json(matches);
 		} catch (error) {
 				res.status(500).json({ error: error.message });
