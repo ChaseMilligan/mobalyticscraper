@@ -379,6 +379,27 @@ app.get('/api/data', async (req, res) => {
     }
 });
 
+app.get('/api/users', async (req, res) => {
+		try {
+				const users = await sql`SELECT * FROM users`;
+				res.json(users);
+		} catch (error) {
+				res.status(500).json({ error: error.message });
+				console.error(error);
+		}
+});
+
+app.get('/api/matches', async (req, res) => {
+		try {
+				const summonerName = req.query.summonerName; // Get the summoner name from query parameters
+				const matches = await sql`SELECT * FROM matches WHERE summoner_name = ${summonerName}`;
+				res.json(matches);
+		} catch (error) {
+				res.status(500).json({ error: error.message });
+				console.error(error);
+		}
+});
+
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
